@@ -26,7 +26,7 @@ def get_img_as_base64(file_path):
         return base64.b64encode(data).decode()
     except: return None
 
-# Load the robot image (Increased size to 85)
+# Load the robot image
 img_b64 = get_img_as_base64("toole.png")
 img_html = f'<img src="data:image/png;base64,{img_b64}" width="85" style="vertical-align: middle; margin-right: 15px;">' if img_b64 else "🤖"
 
@@ -34,12 +34,13 @@ img_html = f'<img src="data:image/png;base64,{img_b64}" width="85" style="vertic
 # ⚙️ CONFIGURATION
 # ==========================================
 
-# 1. API KEY SETUP (Cloud & Local Support)
+# 1. API KEY SETUP
 try:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
 except:
-    st.error("Secrets not found. Please set up your API Key.")
-    st.stop()
+    # Fallback for local testing if secrets.toml is missing
+    st.warning("⚠️ Secrets not found. Using placeholder key.")
+    API_KEY = "PASTE_YOUR_KEY_HERE"
 
 MODEL_ID = "gemini-3-flash-preview"
 client = genai.Client(api_key=API_KEY)
@@ -107,9 +108,6 @@ def get_ai_instruction(image, user_goal, language="English"):
     return {"error": "Server busy"}
 
 def text_to_speech(text, lang_code='en'):
-    """
-    Converts text to audio bytes
-    """
     try:
         tts = gTTS(text=text, lang=lang_code)
         audio_fp = io.BytesIO()
@@ -119,10 +117,9 @@ def text_to_speech(text, lang_code='en'):
     except: return None
 
 # ==========================================
-# 🎨 UI
+# 🎨 UI & CSS
 # ==========================================
 
-#CUSTOM HEADER CSS
 st.markdown("""
     <style>
     /* Import Google Font: Outfit */
@@ -171,8 +168,8 @@ st.markdown("""
     [data-testid="stCameraInput"] video {
         width: 100% !important;
         height: auto !important;
-        aspect-ratio: 3 / 4 !important;  /* ⬅️ THIS MAKES IT VERTICAL */
-        object-fit: cover !important;    /* ⬅️ THIS ZOOMS IT TO FILL */
+        aspect-ratio: 3 / 4 !important;  /* Vertical aspect ratio */
+        object-fit: cover !important;    /* Zoom to fill */
         border-radius: 20px !important;
     }
     
@@ -186,10 +183,19 @@ st.markdown("""
         width: 100% !important;
     }
 
+    /* 🟩 STEP CARDS (Restored!) */
+    .step-card {
+        background-color: #1E1E1E;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border-left: 5px solid #00E5FF; /* Blue-Green Accent */
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# HEADER WITH ROBOT & TITLE
+# HEADER
 st.markdown(f"""
 <div class="header-container">
     {img_html}
@@ -198,11 +204,13 @@ st.markdown(f"""
 <p class="subtitle-text">Your Everything Guide 🌍</p>
 """, unsafe_allow_html=True)
 
-# Sidebar (KEPT EXACTLY AS IN YOUR PASTE)
+# ==========================================
+# ⚙️ SIDEBAR (Restored!)
+# ==========================================
 with st.sidebar:
-    st.header("Settings")
+    st.header("⚙️ Settings")
     
-    # 1. LANGUAGE MAPPING (Tourists + Local)
+    # 1. LANGUAGE MAPPING
     lang_map = {
         "English": "en",
         "Hindi": "hi", 
@@ -219,12 +227,14 @@ with st.sidebar:
     st.divider()
     
     # 2. INPUT MODE
-    # "Live Scanner" = The widget in your screenshot
-    # "Native Camera" = Opens the phone's real camera app (Like Gemini)
     input_mode = st.radio("Input Mode", ["Live Scanner", "Native Camera 📸"])
     
     st.success(f"✅ Mode: {selected_lang}")
     st.caption("🛡️ Safety Guard Active")
+
+# ==========================================
+# 📱 MAIN UI
+# ==========================================
 
 col1, col2 = st.columns(2)
 with col1:
@@ -233,16 +243,19 @@ with col2:
     if input_mode == "Live Scanner":
         st.info("📸 Point camera at device")
     else:
-        st.info("⬆️ Tap below to open camera or upload photo")
+        st.info("⬆️ Tap to use Phone Camera")
 
-# HANDLE INPUT (Camera OR File)
+# HANDLE INPUT
 img_file = None
 if input_mode == "Live Scanner":
     img_file = st.camera_input("Scanner", label_visibility="collapsed")
 else:
-    # We rename the label here to make it clear
+    # Renamed to make it clear this opens the native camera
     img_file = st.file_uploader("Take a photo", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
 
+# ==========================================
+# 🚀 PROCESSING
+# ==========================================
 if img_file and goal:
     image = Image.open(img_file)
     
@@ -262,7 +275,7 @@ if img_file and goal:
             else:
                 st.success(f"📱 {device_name}")
 
-            # 2. GENERATE UNIFIED AUDIO SCRIPT
+            # 2. GENERATE AUDIO
             full_audio_text = f"{device_name}. "
             if risk:
                 full_audio_text += f"Warning: {risk}. "
@@ -271,7 +284,7 @@ if img_file and goal:
             for step in steps:
                 full_audio_text += f"Step {step['order']}: {step['text']}. "
 
-            # 3. PLAY AUDIO (Single Player)
+            # 3. PLAY AUDIO
             audio_bytes = text_to_speech(full_audio_text, lang_code)
             if audio_bytes:
                 st.audio(audio_bytes, format='audio/mp3', start_time=0)
@@ -311,7 +324,12 @@ if img_file and goal:
             # 5. SHOW IMAGE
             st.image(image, use_container_width=True)
             
-            # 6. SHOW TEXT STEPS BELOW
-            st.subheader("Steps")
+            # 6. SHOW STEPS IN CARDS (Restored!)
+            st.markdown("### 📝 Steps")
             for step in steps:
-                st.markdown(f"**{step['order']}.** {step['text']}")
+                st.markdown(f"""
+                <div class="step-card">
+                    <strong style='font-size:1.1rem;'>Step {step['order']}</strong><br>
+                    {step['text']}
+                </div>
+                """, unsafe_allow_html=True)
