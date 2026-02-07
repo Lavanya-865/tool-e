@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="Tool-E",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="expanded" # Forces sidebar to be open/accessible
+    initial_sidebar_state="expanded"
 )
 
 # Helper to load image for the header
@@ -34,7 +34,6 @@ img_html = f'<img src="data:image/png;base64,{img_b64}" width="85" style="vertic
 # ⚙️ CONFIGURATION
 # ==========================================
 
-# 1. API KEY SETUP
 try:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
 except:
@@ -108,12 +107,11 @@ def text_to_speech(text, lang_code='en'):
     except: return None
 
 # ==========================================
-# 🎨 UI & CSS (THE FIX IS HERE)
+# 🎨 UI & CSS (FIXED HERE)
 # ==========================================
 
 st.markdown("""
     <style>
-    /* Import Google Font: Outfit */
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     
     html, body, [class*="css"] {
@@ -146,18 +144,18 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 MOBILE CAMERA FIX: ULTRA VERTICAL */
+    /* 📸 CAMERA FIX: NO CROP, MAX WIDTH */
     div[data-testid="stCameraInput"] {
         width: 100% !important;
     }
 
     div[data-testid="stCameraInput"] video {
-        /* Force 9:16 aspect ratio (Vertical Phone Screen) */
-        aspect-ratio: 9 / 16 !important;
-        width: 100% !important;
-        /* 'cover' crops the sides to fill the vertical height */
-        object-fit: cover !important; 
-        border-radius: 20px !important;
+        /* This ensures the video is NOT cropped */
+        object-fit: contain !important; 
+        /* This ensures it uses the full width of the phone */
+        width: 100% !important; 
+        height: auto !important; 
+        border-radius: 15px !important;
     }
     
     /* Bigger "Take Photo" Button */
@@ -168,6 +166,7 @@ st.markdown("""
         padding: 15px 30px !important;
         font-size: 1.2rem !important;
         width: 100% !important;
+        margin-top: 10px !important;
     }
 
     /* 🟩 STEP CARDS */
@@ -197,23 +196,15 @@ st.markdown(f"""
 with st.sidebar:
     st.header("⚙️ Settings")
     
-    # 1. LANGUAGE MAPPING
     lang_map = {
-        "English": "en",
-        "Hindi": "hi", 
-        "Tamil": "ta",
-        "Telugu": "te",
-        "French": "fr",
-        "Russian": "ru",
-        "Japanese": "ja",
-        "Chinese": "zh-CN"
+        "English": "en", "Hindi": "hi", "Tamil": "ta", "Telugu": "te",
+        "French": "fr", "Russian": "ru", "Japanese": "ja", "Chinese": "zh-CN"
     }
     selected_lang = st.selectbox("Language", list(lang_map.keys()))
     lang_code = lang_map[selected_lang]
     
     st.divider()
     
-    # 2. INPUT MODE
     input_mode = st.radio("Input Mode", ["Live Scanner", "Native Camera 📸"])
     
     st.success(f"✅ Mode: {selected_lang}")
@@ -255,27 +246,24 @@ if img_file and goal:
             device_name = data.get("device_name", "Device")
             steps = data.get("steps", [])
             
-            # 1. DISPLAY STATUS
+            # 1. STATUS
             if risk:
                 st.error(f"⚠️ {risk}")
             else:
                 st.success(f"📱 {device_name}")
 
-            # 2. GENERATE AUDIO
+            # 2. AUDIO
             full_audio_text = f"{device_name}. "
-            if risk:
-                full_audio_text += f"Warning: {risk}. "
-            
+            if risk: full_audio_text += f"Warning: {risk}. "
             full_audio_text += "Instructions: "
             for step in steps:
                 full_audio_text += f"Step {step['order']}: {step['text']}. "
 
-            # 3. PLAY AUDIO
             audio_bytes = text_to_speech(full_audio_text, lang_code)
             if audio_bytes:
                 st.audio(audio_bytes, format='audio/mp3', start_time=0)
 
-            # 4. DRAWING BOXES
+            # 3. DRAWING
             draw = ImageDraw.Draw(image)
             width, height = image.size
             try: font = ImageFont.truetype("arial.ttf", 20)
@@ -285,21 +273,17 @@ if img_file and goal:
                 ymin, xmin, ymax, xmax = step["box_2d"]
                 action = step.get("action_type", "tap").lower()
                 
-                # Colors
                 if risk: color = "#FF0000"
                 elif "hold" in action: color = "#FFFF00"
                 elif "rotate" in action: color = "#00FFFF"
                 else: color = "#00FF00"
 
-                # Box
                 box = [xmin/1000 * width, ymin/1000 * height, xmax/1000 * width, ymax/1000 * height]
                 draw.rectangle(box, outline=color, width=5)
                 
-                # Label
                 label = str(step['order'])
                 if "hold" in action: label += " ✋"
                 
-                # Text Background
                 text_bbox = draw.textbbox((0, 0), label, font=font)
                 text_w = text_bbox[2] - text_bbox[0]
                 text_h = text_bbox[3] - text_bbox[1]
@@ -307,10 +291,10 @@ if img_file and goal:
                 draw.rectangle([text_pos[0], text_pos[1], text_pos[0]+text_w+10, text_pos[1]+text_h+10], fill=color)
                 draw.text((text_pos[0]+5, text_pos[1]), label, fill="black", font=font)
 
-            # 5. SHOW IMAGE
+            # 4. RESULT IMAGE
             st.image(image, use_container_width=True)
             
-            # 6. SHOW STEPS IN CARDS
+            # 5. STEPS
             st.markdown("### 📝 Steps")
             for step in steps:
                 st.markdown(f"""
