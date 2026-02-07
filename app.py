@@ -122,9 +122,21 @@ def text_to_speech(text, lang_code='en'):
 # 🎨 UI
 # ==========================================
 
-# CUSTOM HEADER CSS
+#CUSTOM HEADER CSS
 st.markdown("""
     <style>
+    /* Import Google Font: Outfit */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Outfit', sans-serif;
+    }
+    
+    /* Hide Streamlit Branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
     /* Header Container */
     .header-container {
         display: flex;
@@ -137,7 +149,6 @@ st.markdown("""
         font-size: 3rem;
         font-weight: 700;
         margin: 0;
-        /* UPDATED: Blue to Bluish-Green Gradient */
         background: -webkit-linear-gradient(45deg, #007BFF, #00E5FF);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -151,7 +162,8 @@ st.markdown("""
         margin-bottom: 20px;
         letter-spacing: 1px;
     }
-/* 📸 CAMERA FIX FOR MOBILE */
+    
+    /* 📸 CAMERA FIX: FORCE PORTRAIT MODE */
     [data-testid="stCameraInput"] {
         width: 100% !important;
     }
@@ -159,15 +171,21 @@ st.markdown("""
     [data-testid="stCameraInput"] video {
         width: 100% !important;
         height: auto !important;
-        object-fit: cover !important; /* Forces it to fill the box */
-        border-radius: 20px !important; /* Nice rounded corners */
+        aspect-ratio: 3 / 4 !important;  /* ⬅️ THIS MAKES IT VERTICAL */
+        object-fit: cover !important;    /* ⬅️ THIS ZOOMS IT TO FILL */
+        border-radius: 20px !important;
     }
     
-    /* Remove the "Take Photo" button default styling to make it cleaner */
+    /* Bigger "Take Photo" Button */
     button[kind="primary"] {
-        width: 100%;
-        border-radius: 20px;
+        background-color: #007BFF !important;
+        border: none !important;
+        border-radius: 50px !important;
+        padding: 15px 30px !important;
+        font-size: 1.2rem !important;
+        width: 100% !important;
     }
+
     </style>
 """, unsafe_allow_html=True)
 
@@ -200,8 +218,10 @@ with st.sidebar:
     
     st.divider()
     
-    # 2. INPUT MODE (Camera vs Upload)
-    input_mode = st.radio("Input Mode", ["Camera", "Upload Image"])
+    # 2. INPUT MODE
+    # "Live Scanner" = The widget in your screenshot
+    # "Native Camera" = Opens the phone's real camera app (Like Gemini)
+    input_mode = st.radio("Input Mode", ["Live Scanner", "Native Camera 📸"])
     
     st.success(f"✅ Mode: {selected_lang}")
     st.caption("🛡️ Safety Guard Active")
@@ -210,17 +230,18 @@ col1, col2 = st.columns(2)
 with col1:
     goal = st.text_input("Goal", "How do I use this?")
 with col2:
-    if input_mode == "Camera":
+    if input_mode == "Live Scanner":
         st.info("📸 Point camera at device")
     else:
-        st.info("📂 Upload a photo")
+        st.info("⬆️ Tap below to open camera or upload photo")
 
 # HANDLE INPUT (Camera OR File)
 img_file = None
-if input_mode == "Camera":
-    img_file = st.camera_input("Scanner")
+if input_mode == "Live Scanner":
+    img_file = st.camera_input("Scanner", label_visibility="collapsed")
 else:
-    img_file = st.file_uploader("Upload Image", type=['jpg', 'png', 'jpeg'])
+    # We rename the label here to make it clear
+    img_file = st.file_uploader("Take a photo", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
 
 if img_file and goal:
     image = Image.open(img_file)
