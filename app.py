@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="Tool-E",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"  # Changed to 'auto' for better mobile behavior
 )
 
 # Helper to load image for the header
@@ -38,7 +38,6 @@ img_html = f'<img src="data:image/png;base64,{img_b64}" width="85" style="vertic
 try:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
 except:
-    # Fallback for local testing if secrets.toml is missing
     st.warning("⚠️ Secrets not found. Using placeholder key.")
     API_KEY = "PASTE_YOUR_KEY_HERE"
 
@@ -50,9 +49,6 @@ client = genai.Client(api_key=API_KEY)
 # ==========================================
 
 def get_ai_instruction(image, user_goal, language="English"):
-    """
-    Analyzes image and translates instructions to target language.
-    """
     prompt_text = f"""
     You are Tool-E, a helpful robot assistant.
     User Goal: "{user_goal}"
@@ -83,10 +79,7 @@ def get_ai_instruction(image, user_goal, language="English"):
     RULES:
     * "action_type": "tap", "hold", "rotate", "swipe".
     * box_2d: 0-1000 scale.
-    * FOCUS: Draw boxes TIGHTLY around the button/control.
     """
-    
-    # Retry Logic
     import time
     for attempt in range(3):
         try:
@@ -101,10 +94,8 @@ def get_ai_instruction(image, user_goal, language="English"):
             if isinstance(data, list): data = data[0]
             return data
         except Exception as e:
-            if "503" in str(e) or "500" in str(e):
-                time.sleep(2)
-                continue
-            return {"error": str(e)}
+            time.sleep(1)
+            continue
     return {"error": "Server busy"}
 
 def text_to_speech(text, lang_code='en'):
@@ -129,10 +120,9 @@ st.markdown("""
         font-family: 'Outfit', sans-serif;
     }
     
-    /* Hide Streamlit Branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* REMOVED THE HEADER HIDING CODE TO FIX SIDEBAR */
+    /* #MainMenu {visibility: hidden;} */
+    /* header {visibility: hidden;} */
     
     /* Header Container */
     .header-container {
@@ -160,16 +150,12 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 CAMERA FIX: FORCE PORTRAIT MODE */
-    [data-testid="stCameraInput"] {
+    /* 📸 CAMERA FIX: HARD FORCE HEIGHT */
+    /* This targets the inner video element specifically */
+    div[data-testid="stCameraInput"] video {
+        object-fit: cover !important;
+        height: 450px !important; /* Force tall height */
         width: 100% !important;
-    }
-    
-    [data-testid="stCameraInput"] video {
-        width: 100% !important;
-        height: auto !important;
-        aspect-ratio: 3 / 4 !important;  /* Vertical aspect ratio */
-        object-fit: cover !important;    /* Zoom to fill */
         border-radius: 20px !important;
     }
     
@@ -183,13 +169,13 @@ st.markdown("""
         width: 100% !important;
     }
 
-    /* 🟩 STEP CARDS (Restored!) */
+    /* 🟩 STEP CARDS */
     .step-card {
         background-color: #1E1E1E;
         padding: 15px;
         border-radius: 12px;
         margin-bottom: 10px;
-        border-left: 5px solid #00E5FF; /* Blue-Green Accent */
+        border-left: 5px solid #00E5FF;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     </style>
@@ -205,7 +191,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# ⚙️ SIDEBAR (Restored!)
+# ⚙️ SIDEBAR
 # ==========================================
 with st.sidebar:
     st.header("⚙️ Settings")
@@ -250,7 +236,6 @@ img_file = None
 if input_mode == "Live Scanner":
     img_file = st.camera_input("Scanner", label_visibility="collapsed")
 else:
-    # Renamed to make it clear this opens the native camera
     img_file = st.file_uploader("Take a photo", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
 
 # ==========================================
@@ -324,7 +309,7 @@ if img_file and goal:
             # 5. SHOW IMAGE
             st.image(image, use_container_width=True)
             
-            # 6. SHOW STEPS IN CARDS (Restored!)
+            # 6. SHOW STEPS IN CARDS
             st.markdown("### 📝 Steps")
             for step in steps:
                 st.markdown(f"""
