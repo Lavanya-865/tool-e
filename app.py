@@ -9,13 +9,13 @@ import io
 import base64
 
 # ==========================================
-# 🎨 1. UI CONFIGURATION (MUST BE FIRST)
+# 🎨 1. UI CONFIGURATION
 # ==========================================
 st.set_page_config(
     page_title="Tool-E",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="auto"  # Changed to 'auto' for better mobile behavior
+    initial_sidebar_state="expanded" # Forces sidebar to be open/accessible
 )
 
 # Helper to load image for the header
@@ -108,7 +108,7 @@ def text_to_speech(text, lang_code='en'):
     except: return None
 
 # ==========================================
-# 🎨 UI & CSS
+# 🎨 UI & CSS (THE FIX IS HERE)
 # ==========================================
 
 st.markdown("""
@@ -119,10 +119,6 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif;
     }
-    
-    /* REMOVED THE HEADER HIDING CODE TO FIX SIDEBAR */
-    /* #MainMenu {visibility: hidden;} */
-    /* header {visibility: hidden;} */
     
     /* Header Container */
     .header-container {
@@ -150,12 +146,17 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 CAMERA FIX: HARD FORCE HEIGHT */
-    /* This targets the inner video element specifically */
-    div[data-testid="stCameraInput"] video {
-        object-fit: cover !important;
-        height: 450px !important; /* Force tall height */
+    /* 📸 MOBILE CAMERA FIX: ULTRA VERTICAL */
+    div[data-testid="stCameraInput"] {
         width: 100% !important;
+    }
+
+    div[data-testid="stCameraInput"] video {
+        /* Force 9:16 aspect ratio (Vertical Phone Screen) */
+        aspect-ratio: 9 / 16 !important;
+        width: 100% !important;
+        /* 'cover' crops the sides to fill the vertical height */
+        object-fit: cover !important; 
         border-radius: 20px !important;
     }
     
