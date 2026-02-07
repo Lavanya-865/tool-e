@@ -151,6 +151,23 @@ st.markdown("""
         margin-bottom: 20px;
         letter-spacing: 1px;
     }
+/* 📸 CAMERA FIX FOR MOBILE */
+    [data-testid="stCameraInput"] {
+        width: 100% !important;
+    }
+    
+    [data-testid="stCameraInput"] video {
+        width: 100% !important;
+        height: auto !important;
+        object-fit: cover !important; /* Forces it to fill the box */
+        border-radius: 20px !important; /* Nice rounded corners */
+    }
+    
+    /* Remove the "Take Photo" button default styling to make it cleaner */
+    button[kind="primary"] {
+        width: 100%;
+        border-radius: 20px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
