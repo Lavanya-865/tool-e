@@ -107,12 +107,11 @@ def text_to_speech(text, lang_code='en'):
     except: return None
 
 # ==========================================
-# 🎨 UI & CSS (FIXED HERE)
+# 🎨 UI & CSS
 # ==========================================
 
 st.markdown("""
     <style>
-    /* Import Google Font: Outfit */
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     
     html, body, [class*="css"] {
@@ -145,29 +144,18 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 LIVE CAMERA FIX */
-    /* Target the camera widget container */
-    [data-testid="stCameraInput"] {
-        width: 100% !important;
+    /* 📸 UPLOAD BUTTON STYLING (For Native Camera) */
+    [data-testid="stFileUploader"] {
+        width: 100%;
     }
     
-    /* Target the LIVE VIDEO element directly */
-    [data-testid="stCameraInput"] > div > div > video {
-        height: 580px !important; /* Force the preview to be tall */
-        width: 100% !important;
-        object-fit: cover !important; /* Fill the 580px height */
-        border-radius: 20px !important;
-    }
-    
-    /* Target the "Take Photo" button container to center it */
-    [data-testid="stCameraInput"] > div > div > button {
-        width: 100% !important;
-        background-color: #007BFF !important;
-        border: none !important;
-        border-radius: 50px !important;
-        padding: 15px 30px !important;
-        font-size: 1.2rem !important;
-        margin-top: 10px !important;
+    /* Make the upload area look like a button */
+    section[data-testid="stFileUploaderDropzone"] {
+        background-color: #1E1E1E;
+        border: 2px dashed #00E5FF;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
     }
 
     /* 🟩 STEP CARDS */
@@ -181,6 +169,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
 # HEADER
 st.markdown(f"""
 <div class="header-container">
@@ -205,7 +194,8 @@ with st.sidebar:
     
     st.divider()
     
-    input_mode = st.radio("Input Mode", ["Live Scanner", "Native Camera 📸"])
+    # 🔄 SWAPPED ORDER: Native Camera is now First (Default)
+    input_mode = st.radio("Input Mode", ["Native Camera 📸", "Live Scanner"])
     
     st.success(f"✅ Mode: {selected_lang}")
     st.caption("🛡️ Safety Guard Active")
@@ -218,17 +208,19 @@ col1, col2 = st.columns(2)
 with col1:
     goal = st.text_input("Goal", "How do I use this?")
 with col2:
-    if input_mode == "Live Scanner":
-        st.info("📸 Point camera at device")
+    if input_mode == "Native Camera 📸":
+        st.info("⬆️ Tap to open Camera")
     else:
-        st.info("⬆️ Tap to use Phone Camera")
+        st.info("📸 Point camera at device")
 
 # HANDLE INPUT
 img_file = None
-if input_mode == "Live Scanner":
-    img_file = st.camera_input("Scanner", label_visibility="collapsed")
-else:
+if input_mode == "Native Camera 📸":
+    # Clean file uploader (Native Camera)
     img_file = st.file_uploader("Take a photo", type=['jpg', 'png', 'jpeg'], label_visibility="collapsed")
+else:
+    # Live Scanner (Legacy)
+    img_file = st.camera_input("Scanner", label_visibility="collapsed")
 
 # ==========================================
 # 🚀 PROCESSING
