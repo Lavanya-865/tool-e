@@ -112,6 +112,7 @@ def text_to_speech(text, lang_code='en'):
 
 st.markdown("""
     <style>
+    /* Import Google Font: Outfit */
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     
     html, body, [class*="css"] {
@@ -144,33 +145,28 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 CAMERA FIX: FORCED TALL HEIGHT */
-    div[data-testid="stCameraInput"] {
+    /* 📸 LIVE CAMERA FIX */
+    /* Target the camera widget container */
+    [data-testid="stCameraInput"] {
         width: 100% !important;
     }
-
-    div[data-testid="stCameraInput"] video {
-        /* Force it to be tall (matches most phone screens) */
-        height: 580px !important; 
-        
-        /* Force it to be wide */
-        width: 100% !important; 
-        
-        /* 'cover' = Zoom in to fill the box (No black bars) */
-        /* 'contain' = Show whole image (But adds black bars) */
-        object-fit: cover !important; 
-        
+    
+    /* Target the LIVE VIDEO element directly */
+    [data-testid="stCameraInput"] > div > div > video {
+        height: 580px !important; /* Force the preview to be tall */
+        width: 100% !important;
+        object-fit: cover !important; /* Fill the 580px height */
         border-radius: 20px !important;
     }
     
-    /* Bigger "Take Photo" Button */
-    button[kind="primary"] {
+    /* Target the "Take Photo" button container to center it */
+    [data-testid="stCameraInput"] > div > div > button {
+        width: 100% !important;
         background-color: #007BFF !important;
         border: none !important;
         border-radius: 50px !important;
         padding: 15px 30px !important;
         font-size: 1.2rem !important;
-        width: 100% !important;
         margin-top: 10px !important;
     }
 
