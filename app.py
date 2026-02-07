@@ -144,18 +144,23 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* 📸 CAMERA FIX: NO CROP, MAX WIDTH */
+    /* 📸 CAMERA FIX: FORCED TALL HEIGHT */
     div[data-testid="stCameraInput"] {
         width: 100% !important;
     }
 
     div[data-testid="stCameraInput"] video {
-        /* This ensures the video is NOT cropped */
-        object-fit: contain !important; 
-        /* This ensures it uses the full width of the phone */
+        /* Force it to be tall (matches most phone screens) */
+        height: 580px !important; 
+        
+        /* Force it to be wide */
         width: 100% !important; 
-        height: auto !important; 
-        border-radius: 15px !important;
+        
+        /* 'cover' = Zoom in to fill the box (No black bars) */
+        /* 'contain' = Show whole image (But adds black bars) */
+        object-fit: cover !important; 
+        
+        border-radius: 20px !important;
     }
     
     /* Bigger "Take Photo" Button */
@@ -180,7 +185,6 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
 # HEADER
 st.markdown(f"""
 <div class="header-container">
