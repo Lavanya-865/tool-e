@@ -255,26 +255,26 @@ if img_file and goal:
             if audio_bytes:
                 st.audio(audio_bytes, format='audio/mp3', start_time=0)
 
-            # 3. SMART DRAWING (Dynamic Size Fix)
+            # 3. ULTRA-CHUNKY DRAWING (Mobile Optimized)
             draw = ImageDraw.Draw(image)
             width, height = image.size
             
-            # 🧠 SMART SCALING: Calculate sizes based on image resolution
-            # Line width = 1% of the image's shortest side (min 5px)
-            line_width = max(5, int(min(width, height) * 0.01)) 
-            # Font size = 3% of the image's shortest side (min 20px)
-            font_size = max(20, int(min(width, height) * 0.04))
+            # 🧠 NEW MATH: 
+            # Make line width 2% of the image size (Minimum 25px)
+            # Make font size 5% of the image size (Minimum 60px)
+            line_width = max(25, int(min(width, height) * 0.02)) 
+            font_size = max(60, int(min(width, height) * 0.05))
             
-            # Try to load a bold font that works on Linux (Streamlit Cloud) & Windows
+            # Font Loading with better fallback
             try:
-                # Try common Linux/Cloud font first
+                # Try standard Linux font (Streamlit Cloud)
                 font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
             except:
                 try:
                     # Try Windows font
                     font = ImageFont.truetype("arialbd.ttf", font_size)
                 except:
-                    # Fallback (This might be small, but it's a safety net)
+                    # Fallback to default (and hope for the best)
                     font = ImageFont.load_default()
 
             for step in steps:
@@ -286,7 +286,7 @@ if img_file and goal:
                 elif "rotate" in action: color = "#00FFFF"
                 else: color = "#00FF00"
 
-                # Calculate Box Coordinates
+                # Box
                 box = [
                     xmin/1000 * width, 
                     ymin/1000 * height, 
@@ -294,36 +294,42 @@ if img_file and goal:
                     ymax/1000 * height
                 ]
                 
-                # Draw Box with Dynamic Width
+                # Draw Box (Standard Rectangle)
                 draw.rectangle(box, outline=color, width=line_width)
                 
-                # Prepare Label
+                # 🛠️ "THICKNESS HACK" 
+                # If the line is still thin (due to PIL version), draw it manually as 4 thick lines
+                draw.line([(box[0], box[1]), (box[2], box[1])], fill=color, width=line_width) # Top
+                draw.line([(box[0], box[3]), (box[2], box[3])], fill=color, width=line_width) # Bottom
+                draw.line([(box[0], box[1]), (box[0], box[3])], fill=color, width=line_width) # Left
+                draw.line([(box[2], box[1]), (box[2], box[3])], fill=color, width=line_width) # Right
+
+                # Label
                 label = str(step['order'])
                 if "hold" in action: label += " ✋"
                 
-                # Calculate Text Background Size
+                # Calculate Text Size
                 try:
                     text_bbox = draw.textbbox((0, 0), label, font=font)
                 except:
-                    # Fallback for older PIL versions
                     text_bbox = (0, 0, font_size*len(label), font_size)
                 
                 text_w = text_bbox[2] - text_bbox[0]
                 text_h = text_bbox[3] - text_bbox[1]
                 
-                # Smart Label Positioning (Prevents text from going off-screen)
-                # If box is too close to the top, put text INSIDE or BELOW
-                if box[1] - text_h - 10 < 0:
-                    text_pos = [box[0], box[1] + 10] # Move inside/below
+                # Smart Position: If top is crowded, move label inside or below
+                if box[1] - text_h - 20 < 0:
+                    text_pos = [box[0], box[1] + line_width + 10]
                 else:
-                    text_pos = [box[0], box[1] - text_h - 10] # Standard (Top)
+                    text_pos = [box[0], box[1] - text_h - 20]
 
-                # Draw Text Background & Text
-                padding = int(font_size * 0.2)
+                # Draw Big Label Background
+                padding = int(font_size * 0.3)
                 draw.rectangle(
                     [text_pos[0], text_pos[1], text_pos[0]+text_w+(padding*2), text_pos[1]+text_h+(padding*2)], 
                     fill=color
                 )
+                # Draw Big Text
                 draw.text(
                     (text_pos[0]+padding, text_pos[1]), 
                     label, 
