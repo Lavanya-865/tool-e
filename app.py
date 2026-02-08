@@ -255,11 +255,27 @@ if img_file and goal:
             if audio_bytes:
                 st.audio(audio_bytes, format='audio/mp3', start_time=0)
 
-            # 3. DRAWING
+            # 3. SMART DRAWING (Dynamic Size Fix)
             draw = ImageDraw.Draw(image)
             width, height = image.size
-            try: font = ImageFont.truetype("arial.ttf", 20)
-            except: font = ImageFont.load_default()
+            
+            # 🧠 SMART SCALING: Calculate sizes based on image resolution
+            # Line width = 1% of the image's shortest side (min 5px)
+            line_width = max(5, int(min(width, height) * 0.01)) 
+            # Font size = 3% of the image's shortest side (min 20px)
+            font_size = max(20, int(min(width, height) * 0.04))
+            
+            # Try to load a bold font that works on Linux (Streamlit Cloud) & Windows
+            try:
+                # Try common Linux/Cloud font first
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+            except:
+                try:
+                    # Try Windows font
+                    font = ImageFont.truetype("arialbd.ttf", font_size)
+                except:
+                    # Fallback (This might be small, but it's a safety net)
+                    font = ImageFont.load_default()
 
             for step in steps:
                 ymin, xmin, ymax, xmax = step["box_2d"]
@@ -270,18 +286,50 @@ if img_file and goal:
                 elif "rotate" in action: color = "#00FFFF"
                 else: color = "#00FF00"
 
-                box = [xmin/1000 * width, ymin/1000 * height, xmax/1000 * width, ymax/1000 * height]
-                draw.rectangle(box, outline=color, width=5)
+                # Calculate Box Coordinates
+                box = [
+                    xmin/1000 * width, 
+                    ymin/1000 * height, 
+                    xmax/1000 * width, 
+                    ymax/1000 * height
+                ]
                 
+                # Draw Box with Dynamic Width
+                draw.rectangle(box, outline=color, width=line_width)
+                
+                # Prepare Label
                 label = str(step['order'])
                 if "hold" in action: label += " ✋"
                 
-                text_bbox = draw.textbbox((0, 0), label, font=font)
+                # Calculate Text Background Size
+                try:
+                    text_bbox = draw.textbbox((0, 0), label, font=font)
+                except:
+                    # Fallback for older PIL versions
+                    text_bbox = (0, 0, font_size*len(label), font_size)
+                
                 text_w = text_bbox[2] - text_bbox[0]
                 text_h = text_bbox[3] - text_bbox[1]
-                text_pos = [box[0], max(0, box[1] - text_h - 10)]
-                draw.rectangle([text_pos[0], text_pos[1], text_pos[0]+text_w+10, text_pos[1]+text_h+10], fill=color)
-                draw.text((text_pos[0]+5, text_pos[1]), label, fill="black", font=font)
+                
+                # Smart Label Positioning (Prevents text from going off-screen)
+                # If box is too close to the top, put text INSIDE or BELOW
+                if box[1] - text_h - 10 < 0:
+                    text_pos = [box[0], box[1] + 10] # Move inside/below
+                else:
+                    text_pos = [box[0], box[1] - text_h - 10] # Standard (Top)
+
+                # Draw Text Background & Text
+                padding = int(font_size * 0.2)
+                draw.rectangle(
+                    [text_pos[0], text_pos[1], text_pos[0]+text_w+(padding*2), text_pos[1]+text_h+(padding*2)], 
+                    fill=color
+                )
+                draw.text(
+                    (text_pos[0]+padding, text_pos[1]), 
+                    label, 
+                    fill="black", 
+                    font=font
+                )
 
             # 4. RESULT IMAGE
             st.image(image, use_container_width=True)
